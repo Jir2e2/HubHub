@@ -21,7 +21,7 @@ app.UseCors("AllowAll");
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
-app.MapPost("/api/github-repos", async (HttpContext ctx, IDbConnection db, HttpClient http) =>
+app.MapPost("/github-repos", async (HttpContext ctx, IDbConnection db, HttpClient http) =>
 {
     var auth = ctx.Request.Headers.Authorization.ToString();
     if (!auth.StartsWith("Bearer "))
@@ -78,24 +78,7 @@ app.MapPost("/api/github-repos", async (HttpContext ctx, IDbConnection db, HttpC
     return Results.Ok(repos);
 });
 
-app.MapGet("/api/repositories", async (IDbConnection db) =>
-{
-    if (db.State != ConnectionState.Open) db.Open();
-    const string sql = "SELECT id, github_repo_id, owner, name, full_name, html_url, scanned_at, created_at FROM repositories ORDER BY created_at DESC";
-    using var cmd = new MySqlCommand(sql, (MySqlConnection)db);
-    using var reader = await cmd.ExecuteReaderAsync();
-    var repos = new List<Dictionary<string, object?>>();
-    while (await reader.ReadAsync())
-    {
-        var row = new Dictionary<string, object?>();
-        for (int i = 0; i < reader.FieldCount; i++)
-            row[reader.GetName(i)] = reader.IsDBNull(i) ? null : reader.GetValue(i);
-        repos.Add(row);
-    }
-    return Results.Ok(repos);
-});
-
-app.MapGet("/api/links", async (IDbConnection db, string? search, string? domain, string? repo, string? date) =>
+app.MapGet("/links", async (IDbConnection db, string? search, string? domain, string? repo, string? date) =>
 {
     if (db.State != ConnectionState.Open) db.Open();
     var conditions = new List<string>();
@@ -139,7 +122,7 @@ app.MapGet("/api/links", async (IDbConnection db, string? search, string? domain
     return Results.Ok(links);
 });
 
-app.MapGet("/api/links/domains", async (IDbConnection db) =>
+app.MapGet("/links/domains", async (IDbConnection db) =>
 {
     if (db.State != ConnectionState.Open) db.Open();
     const string sql = "SELECT domain, COUNT(*) as cnt FROM links GROUP BY domain ORDER BY cnt DESC";

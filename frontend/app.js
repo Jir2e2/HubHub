@@ -7,7 +7,7 @@ const el = id => document.getElementById(id);
 function api(path, opts = {}) {
   const headers = { ...opts.headers };
   if (token) headers.Authorization = "Bearer " + token;
-  return fetch("/api" + path, { ...opts, headers });
+  return fetch(path, { ...opts, headers });
 }
 
 async function loadRepos() {
