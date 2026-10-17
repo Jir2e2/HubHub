@@ -105,33 +105,41 @@ def list_repos():
 @app.route("/scan", methods=["POST"])
 def scan():
     data = request.get_json(force=True)
-    repo_ids = data.get("repository_ids", [])
+    repos = data.get("repositories", [])
 
     db = get_db()
     cursor = db.cursor()
 
     results = []
-    for rid in repo_ids:
-        cursor.execute("SELECT id, github_repo_id, owner, name FROM repositories WHERE github_repo_id=%s", (rid,))
+    for rdata in repos:
+        github_repo_id = rdata.get("github_repo_id")
+        owner = rdata.get("owner", "")
+        name = rdata.get("name", "")
+        full_name = rdata.get("full_name", "")
+        html_url = rdata.get("html_url", "")
+
+        if not github_repo_id:
+            continue
+
+        cursor.execute(
+            "SELECT id FROM repositories WHERE github_repo_id=%s", (github_repo_id,),
+        )
         row = cursor.fetchone()
         if row:
-            repo_db_id, github_repo_id, owner, name = row
+            repo_db_id = row[0]
         else:
-            # fetch repo info from GitHub
-            resp = requests.get(f"https://api.github.com/repositories/{rid}", headers=github_headers())
-            r = resp.json()
             cursor.execute(
-                "INSERT INTO repositories (github_repo_id, owner, name, full_name, html_url) VALUES (%s,%s,%s,%s,%s)",
-                (r["id"], r["owner"]["login"], r["name"], r["full_name"], r["html_url"]),
+                "INSERT INTO repositories (github_repo_id, owner, name, full_name, html_url) "
+                "VALUES (%s,%s,%s,%s,%s)",
+                (github_repo_id, owner, name, full_name, html_url),
             )
             db.commit()
             repo_db_id = cursor.lastrowid
-            github_repo_id = r["id"]
-            owner = r["owner"]["login"]
-            name = r["name"]
 
         # mark scan pending
-        cursor.execute("INSERT INTO scans (repository_id, status) VALUES (%s, 'pending')", (repo_db_id,))
+        cursor.execute(
+            "INSERT INTO scans (repository_id, status) VALUES (%s, 'pending')", (repo_db_id,),
+        )
         db.commit()
         scan_id = cursor.lastrowid
 
@@ -139,7 +147,20 @@ def scan():
         links_new = 0
 
         # get repo contents
-        resp = requests.get(f"https://api.github.com/repos/{owner}/{name}/contents", headers=github_headers())
+        resp = requests.get(
+            f"https://api.github.com/repos/{owner}/{name}/contents", headers=github_headers()
+        )
+        if resp.status_code != 200:
+            cursor.execute(
+                "UPDATE scans SET status='failed' WHERE id=%s", (scan_id,),
+            )
+            db.commit()
+            results.append({
+                "repository": f"{owner}/{name}",
+                "error": f"GitHub API {resp.status_code}",
+            })
+            continue
+
         contents = resp.json()
 
         target_extensions = (".md", ".txt")
@@ -153,7 +174,9 @@ def scan():
             file_resp = requests.get(item["download_url"], headers=github_headers())
             content = file_resp.text
 
-            source_type = "readme" if fname == "readme.md" else ("markdown" if fname.endswith(".md") else "text")
+            source_type = "readme" if fname == "readme.md" else (
+                "markdown" if fname.endswith(".md") else "text"
+            )
             extracted = extract_urls_llm(content, item["path"])
 
             for link in extracted:
@@ -161,14 +184,20 @@ def scan():
                 norm = normalize_url(link["url"])
                 domain = get_domain(norm)
 
-                cursor.execute("SELECT id FROM links WHERE repository_id=%s AND normalized_url=%s", (repo_db_id, norm))
+                cursor.execute(
+                    "SELECT id FROM links WHERE repository_id=%s AND normalized_url=%s",
+                    (repo_db_id, norm),
+                )
                 if cursor.fetchone():
                     continue
 
                 cursor.execute(
-                    "INSERT INTO links (repository_id, url, normalized_url, domain, title, source_type, source_path) "
-                    "VALUES (%s,%s,%s,%s,%s,%s,%s)",
-                    (repo_db_id, link["url"], norm, domain, link.get("title", ""), source_type, item["path"]),
+                    "INSERT INTO links (repository_id, url, normalized_url, domain, "
+                    "title, source_type, source_path) VALUES (%s,%s,%s,%s,%s,%s,%s)",
+                    (
+                        repo_db_id, link["url"], norm, domain,
+                        link.get("title", ""), source_type, item["path"],
+                    ),
                 )
                 links_new += 1
 

@@ -100,8 +100,20 @@ function renderLinks() {
 
 async function scanSelected() {
   const boxes = el("repoList").querySelectorAll('input[type="checkbox"]:checked');
-  const ids = Array.from(boxes).map(b => parseInt(b.value));
-  if (!ids.length) return;
+  if (!boxes.length) return;
+
+  const repositories = Array.from(boxes).map(b => {
+    const div = b.closest('.repo-item');
+    const name = div.querySelector('.repo-name').textContent;
+    const owner = div.querySelector('.repo-owner').textContent.split(' / ')[0];
+    return {
+      github_repo_id: parseInt(b.value),
+      owner: owner,
+      name: name.split(' / ')[1] || name,
+      full_name: name,
+      html_url: `https://github.com/${name}`,
+    };
+  });
 
   el("scanBtn").disabled = true;
   el("scanStatus").textContent = "Сканирование...";
@@ -109,10 +121,10 @@ async function scanSelected() {
   const r = await api("/scan", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ repository_ids: ids }),
+    body: JSON.stringify({ repositories }),
   });
   const result = await r.json();
-  el("scanStatus").textContent = "Готово. Найдено ссылок: " + result.scanned.reduce((s, x) => s + x.links_found, 0);
+  el("scanStatus").textContent = "Готово. Найдено ссылок: " + result.scanned.reduce((s, x) => s + (x.links_found || 0), 0);
   el("scanBtn").disabled = false;
   loadLinks();
 }
