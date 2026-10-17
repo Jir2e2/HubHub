@@ -32,6 +32,13 @@ function renderRepos() {
     `;
     list.appendChild(div);
   });
+  updateScanBtn();
+  list.addEventListener("change", updateScanBtn);
+}
+
+function updateScanBtn() {
+  const hasChecked = el("repoList").querySelector('input[type="checkbox"]:checked');
+  el("scanBtn").disabled = !hasChecked;
 }
 
 function populateRepoFilter() {
