@@ -35,6 +35,7 @@ def extract_urls_llm(content, file_path):
         "Ты извлекаешь полезные HTTP(S) ссылки из текста файла репозитория.\n"
         "Верни только JSON-массив объектов {\"url\": \"...\", \"title\": \"...\"}.\n"
         "Исключи дубли, ссылки на аватары, иконки, shields.io бэйджи, "
+        "локальные адреса (localhost, 127.0.0.1, 0.0.0.0), "
         "ссылки внутри кода (примеры в блоков кода), и относительные пути.\n"
         "Нормализуй URL: убери tracking-параметры (utm_*), trailing slash.\n"
         f"\nФайл: {file_path}\nСодержимое:\n{content[:6000]}\n"
@@ -64,7 +65,7 @@ def extract_urls_llm(content, file_path):
         u = re.sub(r"[\),\.;\"]$", "", u)
         u = re.sub(r"[?&]utm_[^=&]+", "", u)
         u = u.rstrip("/")
-        if u not in seen and not any(x in u for x in ("shields.io", "github.com/", "raw.githubusercontent.com")):
+        if u not in seen and not any(x in u for x in ("shields.io", "github.com/", "raw.githubusercontent.com", "localhost", "127.0.0.1", "0.0.0.0")):
             seen.add(u)
             result.append({"url": u, "title": ""})
     return result
