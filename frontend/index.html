@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HubHub — менеджер ссылок</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+  <header class="header">
+    <div class="logo">HubHub</div>
+    <div class="auth" id="auth">
+      <input type="text" id="tokenInput" placeholder="GitHub токен" maxlength="255">
+      <button id="loginBtn">Войти</button>
+      <div id="userInfo" style="display:none;"></div>
+      <button id="logoutBtn" style="display:none;">Выйти</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="repos-section">
+      <h2>Репозитории</h2>
+      <div class="repo-list" id="repoList"></div>
+      <div class="repo-actions">
+        <button id="scanBtn" disabled>Сканировать выбранные</button>
+        <span id="scanStatus" class="status-text"></span>
+      </div>
+    </section>
+
+    <section class="links-section">
+      <div class="toolbar">
+        <input type="text" id="searchInput" placeholder="Поиск по ссылкам...">
+        <select id="domainFilter"><option value="">Все домены</option></select>
+        <select id="repoFilter"><option value="">Все репозитории</option></select>
+        <input type="date" id="dateFilter">
+        <button id="clearFiltersBtn">Сбросить</button>
+      </div>
+      <div class="table-wrap">
+        <table id="linksTable">
+          <thead>
+            <tr><th>URL</th><th>Домен</th><th>Источник</th><th>Репозиторий</th><th>Дата</th></tr>
+          </thead>
+          <tbody id="linksBody"></tbody>
+        </table>
+      </div>
+      <div id="stats" class="stats"></div>
+    </section>
+  </main>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
