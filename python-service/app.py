@@ -104,6 +104,9 @@ def list_repos():
 
 @app.route("/scan", methods=["POST"])
 def scan():
+    if not GITHUB_TOKEN:
+        return jsonify({"error": "GITHUB_TOKEN not set. Add it to .env and restart."}), 400
+
     data = request.get_json(force=True)
     repos = data.get("repositories", [])
 
@@ -150,6 +153,8 @@ def scan():
         resp = requests.get(
             f"https://api.github.com/repos/{owner}/{name}/contents", headers=github_headers()
         )
+        if resp.status_code == 401:
+            return jsonify({"error": "GitHub API: 401 Unauthorized. Check GITHUB_TOKEN."}), 401
         if resp.status_code != 200:
             cursor.execute(
                 "UPDATE scans SET status='failed' WHERE id=%s", (scan_id,),

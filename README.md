@@ -16,7 +16,7 @@
 
 | Переменная | Описание | Пример |
 |---|---|---|
-| `GITHUB_TOKEN` | GitHub OAuth токен или PAT | `ghp_xxxx` |
+| `GITHUB_TOKEN` | GitHub OAuth токен или PAT (обязательно) | `ghp_xxxx` |
 | `MYSQL_ROOT_PASSWORD` | Пароль root MySQL | `rootpass` |
 | `MYSQL_DATABASE` | Имя БД | `hubhub` |
 | `MYSQL_USER` | Пользователь БД | `hubhub` |
@@ -24,9 +24,13 @@
 | `LLM_API_URL` | URL LLM API (опционально) | `http://llm:8000/v1/chat/completions` |
 | `LLM_API_KEY` | Ключ LLM API (опционально) | `sk-xxxx` |
 
+> **Важно:** без `GITHUB_TOKEN` сканирование не сработает — сервер вернёт ошибку 400. Получить токен можно на https://github.com/settings/personal-access-tokens/new (достаточно прав `public_repo`).
+
 ## Запуск
 
 ```bash
+cp .env.example .env
+# отредактируйте .env и вставьте свой GITHUB_TOKEN
 chmod +x build.sh
 ./build.sh
 ```
