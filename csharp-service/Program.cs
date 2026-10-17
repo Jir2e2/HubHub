@@ -10,7 +10,14 @@ var connStr = Environment.GetEnvironmentVariable("MYSQL__CONNECTIONSTRING") ?? "
 builder.Services.AddScoped<IDbConnection>(_ => new MySqlConnection(connStr));
 builder.Services.AddHttpClient();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", p => p.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+});
+
 var app = builder.Build();
+
+app.UseCors("AllowAll");
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
