@@ -12,7 +12,7 @@ function api(path, opts = {}) {
 }
 
 async function loadRepos() {
-  const r = await api("/api/repositories");
+  const r = await api("/api/github-repos", { method: "POST" });
   repos = await r.json();
   renderRepos();
   populateRepoFilter();
