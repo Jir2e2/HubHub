@@ -123,6 +123,12 @@ async function scanSelected() {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ repositories }),
   });
+  if (!r.ok) {
+    const err = await r.json();
+    el("scanStatus").textContent = "Ошибка: " + (err.error || "неизвестная ошибка");
+    el("scanBtn").disabled = false;
+    return;
+  }
   const result = await r.json();
   el("scanStatus").textContent = "Готово. Найдено ссылок: " + result.scanned.reduce((s, x) => s + (x.links_found || 0), 0);
   el("scanBtn").disabled = false;
